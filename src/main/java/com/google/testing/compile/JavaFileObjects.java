@@ -19,6 +19,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.tools.JavaFileObject.Kind.SOURCE;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteSource;
+import com.google.common.io.Resources;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,18 +36,12 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 
 import javax.tools.ForwardingJavaFileObject;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
-
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteSource;
-import com.google.common.io.Resources;
 
 /**
  * A utility class for creating {@link JavaFileObject} instances.
@@ -59,7 +60,13 @@ public final class JavaFileObjects {
    * source and compilation errors may result if they do not match.
    */
   public static JavaFileObject forSourceString(String fullyQualifiedName, String source) {
-    return new StringSourceJavaFileObject(checkNotNull(fullyQualifiedName), checkNotNull(source));
+    checkNotNull(fullyQualifiedName);
+    if (fullyQualifiedName.startsWith("package ")) {
+      throw new IllegalArgumentException(
+          String.format("fullyQualifiedName starts with \"package\" (%s). Did you forget to "
+              + "specify the name and specify just the source text?",  fullyQualifiedName));
+    }
+    return new StringSourceJavaFileObject(fullyQualifiedName, checkNotNull(source));
   }
 
   private static final Joiner LINE_JOINER = Joiner.on('\n');
@@ -79,6 +86,11 @@ public final class JavaFileObjects {
    *   }</pre>
    */
   public static JavaFileObject forSourceLines(String fullyQualifiedName, String... lines) {
+    return forSourceLines(fullyQualifiedName, Arrays.asList(lines));
+  }
+
+  /** An overload of {@code #forSourceLines} that takes an {@code Iterable<String>}. */
+  public static JavaFileObject forSourceLines(String fullyQualifiedName, Iterable<String> lines) {
     return forSourceString(fullyQualifiedName, LINE_JOINER.join(lines));
   }
 
@@ -159,6 +171,14 @@ public final class JavaFileObjects {
       }
     }
     return Kind.OTHER;
+  }
+
+  static ByteSource asByteSource(final JavaFileObject javaFileObject) {
+    return new ByteSource() {
+      @Override public InputStream openStream() throws IOException {
+        return javaFileObject.openInputStream();
+      }
+    };
   }
 
   private static final class JarFileJavaFileObject

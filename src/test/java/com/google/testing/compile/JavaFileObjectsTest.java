@@ -15,20 +15,22 @@
  */
 package com.google.testing.compile;
 
+import static com.google.common.truth.Truth.assertThat;
 import static javax.tools.JavaFileObject.Kind.CLASS;
-import static org.truth0.Truth.ASSERT;
+import static org.junit.Assert.fail;
+
+import com.google.common.io.Resources;
+
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import javax.tools.JavaFileObject;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-
-import com.google.common.io.Resources;
 
 /**
  *  Tests {@link JavaFileObjects}.
@@ -39,11 +41,11 @@ import com.google.common.io.Resources;
 public class JavaFileObjectsTest {
   @Test public void forResource_inJarFile() throws URISyntaxException, IOException {
     JavaFileObject resourceInJar = JavaFileObjects.forResource("java/lang/Object.class");
-    ASSERT.that(resourceInJar.getKind()).isEqualTo(CLASS);
-    ASSERT.that(resourceInJar.toUri()).isEqualTo(URI.create("/java/lang/Object.class"));
-    ASSERT.that(resourceInJar.getName())
+    assertThat(resourceInJar.getKind()).isEqualTo(CLASS);
+    assertThat(resourceInJar.toUri()).isEqualTo(URI.create("/java/lang/Object.class"));
+    assertThat(resourceInJar.getName())
         .isEqualTo(Resources.getResource("java/lang/Object.class").toString());
-    ASSERT.that(resourceInJar.isNameCompatible("Object", CLASS)).isTrue();
+    assertThat(resourceInJar.isNameCompatible("Object", CLASS)).isTrue();
   }
 
   @Test public void forSourceLines() throws IOException {
@@ -55,7 +57,7 @@ public class JavaFileObjectsTest {
         "    System.out.println(\"hello!\");",
         "  }",
         "}");
-    ASSERT.that(fileObject.getCharContent(false)).isEqualTo(
+    assertThat(fileObject.getCharContent(false)).isEqualTo(
         "package example;\n"
             + "\n"
             + "final class HelloWorld {\n"
@@ -63,5 +65,19 @@ public class JavaFileObjectsTest {
             + "    System.out.println(\"hello!\");\n"
             + "  }\n"
             + "}");
+  }
+
+  @Test public void forSourceLinesWithoutName() {
+    try {
+      JavaFileObjects.forSourceLines(
+          "package example;",
+          "",
+          "final class HelloWorld {",
+          "  void sayHello() {",
+          "    System.out.println(\"hello!\");",
+          "  }",
+          "}");
+      fail("An exception should have been thrown.");
+    } catch (IllegalArgumentException expected) {}
   }
 }

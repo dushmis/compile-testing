@@ -42,8 +42,8 @@ import javax.lang.model.util.Types;
  * A {@link JUnit4} {@link Rule} that executes tests such that a instances of {@link Elements} and
  * {@link Types} are available during execution.
  *
- * <p>To use this rule in a test, just add the following field: <pre>   {@code
- *   @Rule public CompilationRule compilationRule = new CompilationRule();}
+ * <p>To use this rule in a test, just add the following field: <pre><code>
+ *   {@code @Rule} public CompilationRule compilationRule = new CompilationRule();</code></pre>
  *
  * @author Gregory Kick
  */
@@ -88,6 +88,7 @@ public final class CompilationRule implements TestRule {
             return false;
           }
         }),
+        ImmutableSet.<String>of(),
         // just compile _something_
         ImmutableList.of(JavaFileObjects.forSourceLines("Dummy", "final class Dummy {}")));
         checkState(result.successful(), result);
